@@ -3,6 +3,7 @@ import { MikroORM } from '@mikro-orm/postgresql';
 import { Module, OnModuleInit } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import mikroOrmConfig from './core/configs/mikro-orm.config';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import mikroOrmConfig from './core/configs/mikro-orm.config';
       ],
     }),
     MikroOrmModule.forRoot(mikroOrmConfig),
+    PaymentModule,
   ],
 })
 export class AppModule implements OnModuleInit {
