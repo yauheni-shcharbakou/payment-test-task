@@ -1,0 +1,75 @@
+name: payments
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    container_name: payments-postgres
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-admin}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-password123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - private_network
+    profiles:
+      - local
+      - all
+
+  postgres-init:
+    image: postgres:15-alpine
+    restart: on-failure
+    container_name: payments-postgres-init
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-admin}
+      PGPASSWORD: ${DATABASE_PASSWORD:-password123}
+      DATABASE_NAME: ${DATABASE_NAME:-payments}
+    command: >
+      bash -c "
+        until pg_isready -h postgres -p 5432 -U $$POSTGRES_USER; do
+          sleep 1;
+        done;
+
+        chk=$$(psql -h postgres -U $$POSTGRES_USER -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='$$DATABASE_NAME'\")
+
+        if [ \"$$chk\" != \"1\" ]; then
+          psql -h postgres -U $$POSTGRES_USER -d postgres -c \"CREATE DATABASE $$DATABASE_NAME;\"
+        fi
+      "
+    depends_on:
+      - postgres
+    networks:
+      - private_network
+    profiles:
+      - local
+      - all
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
+    container_name: payments-backend
+    ports:
+      - '3000:3000'
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DATABASE_USER:-admin}:${DATABASE_PASSWORD:-password123}@postgres:5432
+    networks:
+      - private_network
+      - public_network
+    depends_on:
+      - postgres
+    profiles:
+      - all
+
+networks:
+  private_network:
+  public_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
