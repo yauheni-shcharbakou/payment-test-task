@@ -1,11 +1,12 @@
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { Module } from '@nestjs/common';
+import { ItemEntity } from './entities/item.entity';
 import { UserEntity } from './entities/user.entity';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 
 @Module({
-  imports: [MikroOrmModule.forFeature([UserEntity])],
+  imports: [MikroOrmModule.forFeature([UserEntity, ItemEntity])],
   providers: [PaymentService],
   controllers: [PaymentController],
 })
